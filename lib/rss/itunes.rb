@@ -80,6 +80,7 @@ module RSS
                      ["image", :attribute, "href"],
                      ["owner", :element],
                      ["new-feed-url"],
+                     ["language"]
                     ] + ITunesBaseModel::ELEMENT_INFOS
 
     class ITunesCategory < Element
@@ -258,7 +259,14 @@ module RSS
     end
 
     ELEMENT_INFOS = ITunesBaseModel::ELEMENT_INFOS +
-      [["duration", :element, "content"]]
+      [
+        ["duration", :element, "content"],
+        ["image", :attribute, "href"],
+        ["season"],
+        ["episode"],
+        ["episodeType"],
+        ["title"],
+      ]
 
     class ITunesDuration < Element
       include RSS09
@@ -401,6 +409,55 @@ module RSS
         duration.content = @content
       end
     end
+
+    class ITunesImage < Element
+      include RSS09
+
+      @tag_name = "image"
+
+      class << self
+        def required_prefix
+          ITUNES_PREFIX
+        end
+
+        def required_uri
+          ITUNES_URI
+        end
+      end
+
+      [
+        ["href", "", true]
+      ].each do |name, uri, required|
+        install_get_attribute(name, uri, required)
+      end
+
+      def initialize(*args)
+        if Utils.element_initialize_arguments?(args)
+          super
+        else
+          super()
+          self.href = args[0]
+        end
+      end
+
+      def full_name
+        tag_name_with_prefix(ITUNES_PREFIX)
+      end
+
+      private
+      def maker_target(target)
+        if href
+          target.itunes_image {|image| image}
+        else
+          nil
+        end
+      end
+
+      def setup_maker_attributes(image)
+        image.href = href
+      end
+    end
+
   end
 
   class Rss
